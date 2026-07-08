@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área de Membros – Hortaliças Ilustradas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #1b3a24;
+            --primary-light: #2d5a3c;
+            --primary-mid: #3a7a4a;
+            --support: #4caf50;
+            --support-dark: #388e3c;
+            --support-light: #e8f5e9;
+            --bg-beige: #e4f2e4;
+            --bg-beige-dark: #d0e9d0;
+            --text-dark: #1e2e20;
+            --text-muted: #5c6f5f;
+            --border-color: #b8e2b9;
+            --shadow-sm: 0 2px 8px rgba(27,58,36,0.07);
+            --shadow-md: 0 8px 28px rgba(27,58,36,0.10);
+            --shadow-lg: 0 20px 50px rgba(27,58,36,0.14);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --radius-md: 18px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: var(--primary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+        }
+
+        .topbar-inner {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .topbar-brand .leaf-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--support), var(--support-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .topbar-brand span {
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.10);
+            border-radius: 40px;
+            padding: 6px 14px 6px 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .avatar-sm {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--support), var(--support-dark));
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .user-chip-email {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.75rem;
+            font-weight: 500;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.75);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 7px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.16);
+            color: white;
+        }
+
+        .logout-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+        }
+
+        /* ── HERO PROGRESS BANNER ── */
+        .progress-banner {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .progress-banner-inner {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 28px 24px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+
+        .progress-greeting {
+            flex: 1;
+            min-width: 200px;
+            color: white;
+        }
+
+        .progress-greeting h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            line-height: 1.25;
+        }
+
+        .progress-greeting p {
+            font-size: 0.82rem;
+            opacity: 0.75;
+        }
+
+        .progress-widget {
+            flex: 2;
+            min-width: 260px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 18px 22px;
+        }
+
+        .progress-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-label {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .progress-numbers {
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--support), #81c784);
+            border-radius: 99px;
+            transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 0 10px rgba(76,175,80,0.45);
+        }
+
+        .progress-message {
+            margin-top: 8px;
+            font-size: 0.73rem;
+            color: rgba(255,255,255,0.60);
+            font-style: italic;
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .page-wrapper {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 36px 24px 60px;
+            overflow: hidden;
+        }
+
+        /* ── PRODUCT BANNER ── */
+        .product-banner {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 32px;
+            box-shadow: 0 6px 24px rgba(27,58,36,0.12);
+            border: 2px solid var(--border-color);
+        }
+
+        .product-banner img {
+            width: 100%;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+
+        .product-banner:hover img {
+            transform: scale(1.01);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .section-header h2 {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(76,175,80,0.4), transparent);
+        }
+
+        .section-badge {
+            background: rgba(76,175,80,0.18);
+            color: var(--support);
+            border: 1px solid rgba(76,175,80,0.35);
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* ── MATERIALS GRID ── */
+        .materials-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 22px;
+        }
+
+        @media (min-width: 600px) {
+            .materials-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (min-width: 1000px) {
+            .materials-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .card.locked-card {
+            border-color: #d0d7de;
+            background: #f6f8fa;
+        }
+
+        .card.locked-card:hover {
+            transform: none;
+            box-shadow: var(--shadow-sm);
+            border-color: #d0d7de;
+        }
+
+        .lock-blur-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(246, 248, 250, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+
+        .lock-blur-overlay svg {
+            width: 48px;
+            height: 48px;
+            fill: none;
+            stroke: #57606a;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .lock-overlay-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background: #f6f8fa;
+            color: #57606a;
+            border: 1.5px solid #d0d7de;
+            padding: 10px 14px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: #92d993;
+        }
+
+        .card.completed-card {
+            border-color: var(--support);
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.12), var(--shadow-sm);
+        }
+
+        .card-image-wrapper {
+            width: 100%;
+            background: var(--bg-beige-dark);
+            position: relative;
+        }
+
+        .card-image-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .card-image-wrapper img {
+            transform: scale(1.02);
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 2;
+            background: var(--primary);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        .card-badge.badge-main {
+            background: linear-gradient(135deg, var(--support), var(--support-dark));
+        }
+
+        .completed-stamp {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            width: 30px;
+            height: 30px;
+            background: var(--support);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.5);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: var(--transition);
+        }
+
+        .completed-stamp.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .completed-stamp svg {
+            width: 14px;
+            height: 14px;
+            stroke: white;
+            fill: none;
+            stroke-width: 3;
+        }
+
+        .card-body {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-body h3 {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+
+        .card-body p {
+            font-size: 0.77rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+            flex-grow: 1;
+            margin-bottom: 14px;
+        }
+
+        .card-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .open-btn {
+            flex-grow: 1;
+            background: linear-gradient(135deg, var(--support) 0%, var(--support-dark) 100%);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 11px 16px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(76,175,80,0.25);
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+        }
+
+        .open-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(76,175,80,0.4);
+        }
+
+        .track-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .track-btn:hover {
+            border-color: var(--support);
+            background: var(--support-light);
+        }
+
+        .track-btn svg {
+            width: 17px;
+            height: 17px;
+            stroke: var(--text-muted);
+            fill: none;
+            stroke-width: 2.8;
+            transition: var(--transition);
+        }
+
+        .track-btn.completed {
+            background: var(--support);
+            border-color: var(--support);
+        }
+
+        .track-btn.completed svg {
+            stroke: #ffffff;
+        }
+
+        /* ── PAGE FOOTER ── */
+        .page-footer {
+            text-align: center;
+            padding: 20px 24px 40px;
+            color: rgba(0,0,0,0.35);
+            font-size: 0.72rem;
+        }
+
+        /* ── MOBILE ── */
+        @media (max-width: 520px) {
+            .user-chip-email { display: none; }
+            .logout-btn span { display: none; }
+            .logout-btn { padding: 7px 10px; }
+            .progress-greeting h1 { font-size: 1.1rem; }
+            .progress-banner-inner { gap: 18px; padding: 20px 16px; }
+            .page-wrapper { padding: 24px 16px 50px; }
+            .section-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .section-header h2 {
+                flex: 0 0 auto;
+            }
+            .section-line {
+                display: none;
+            }
+            .section-badge {
+                flex: 0 0 auto;
+                order: 3;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── TOP NAVIGATION BAR ── -->
+    <nav class="topbar">
+        <div class="topbar-inner">
+            <div class="topbar-brand">
+                <span>Hortaliças Ilustradas</span>
+            </div>
+            <div class="topbar-right">
+                <div class="user-chip">
+                    <div class="avatar-sm" id="top-avatar">U</div>
+                    <span class="user-chip-email" id="top-email">email@email.com</span>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── PROGRESS BANNER ── -->
+    <div class="progress-banner">
+        <div class="progress-banner-inner">
+            <div class="progress-greeting">
+                <h1>Olá, <span id="user-firstname">Agricultor</span>! 👋</h1>
+                <p>Seus materiais estão disponíveis abaixo.</p>
+            </div>
+            <div class="progress-widget">
+                <div class="progress-top-row">
+                    <span class="progress-label">Seu Progresso</span>
+                    <span class="progress-numbers" id="progress-text">0 / 5 concluídos</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progress-bar"></div>
+                </div>
+                <div class="progress-message" id="progress-msg">Clique no ✓ de cada card para registrar seu progresso!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MAIN CONTENT ── -->
+    <div class="page-wrapper">
+        <div class="section-header">
+            <h2>Seus Conteúdos Disponíveis</h2>
+            <div class="section-line"></div>
+            <div class="section-badge">5 materiais</div>
+        </div>
+
+        <div class="materials-grid" id="materials-container">
+            <!-- Preenchido via JavaScript -->
+        </div>
+    </div>
+
+    <div class="page-footer">
+        &copy; 2025 Hortaliças Ilustradas · Todos os direitos reservados
+    </div>
+
+    <script>
+        // ── Parse URL params ──
+        const urlParams = new URLSearchParams(window.location.search);
+        const userEmail = urlParams.get('email') || localStorage.getItem('member_email');
+        const userName  = urlParams.get('name')  || localStorage.getItem('member_name');
+        const userPlan  = urlParams.get('plano') || localStorage.getItem('member_plano') || 'basico';
+
+        // Redirect to login if credentials are missing
+        if (!userEmail) {
+            window.location.href = 'login.html';
+        }
+
+        // Persist session
+        localStorage.setItem('member_email', userEmail);
+        localStorage.setItem('member_name', userName || 'Agricultor');
+        localStorage.setItem('member_plano', userPlan);
+
+        // ── Populate UI with user info ──
+        const displayName = userName || 'Agricultor';
+        const firstNameRaw = displayName.split(' ')[0];
+        const firstName = firstNameRaw.charAt(0).toUpperCase() + firstNameRaw.slice(1).toLowerCase();
+
+        document.getElementById('top-avatar').textContent       = firstName.charAt(0).toUpperCase();
+        document.getElementById('top-email').textContent        = userEmail;
+        document.getElementById('user-firstname').textContent   = firstName;
+
+        // ── Logout ──
+        function handleLogout() {
+            localStorage.removeItem('member_email');
+            localStorage.removeItem('member_name');
+            localStorage.removeItem('member_plano');
+            window.location.href = 'login.html';
+        }
+
+        // ── Materials Data ──
+        const materials = [
+            {
+                id: 0,
+                type: 'principal',
+                badge: 'MATERIAL PRINCIPAL',
+                title: '+150 Pragas e Doenças em Hortaliças Ilustradas',
+                desc: 'Guia ilustrado definitivo para identificação rápida dos principais sintomas e sinais de doenças na sua horta.',
+                img: 'https://i.ibb.co/v6ngRRkk/image.png',
+                link: 'https://drive.google.com/file/d/1i7DoWrIAfBxfo9amA30odDb6PuIb6c45/view'
+            },
+            {
+                id: 1,
+                type: 'bonus',
+                badge: 'BÔNUS 1',
+                title: 'Mapa Visual de Sintomas nas Folhas',
+                desc: 'Identificação visual expressa de manchas, furos e anomalias comuns em folhas de hortaliças.',
+                img: 'https://i.ibb.co/HTVgvSr8/image.png',
+                link: 'https://drive.google.com/file/d/1PbOCUu6n2_TINYALAyMjJlWFE6LG9LPo/view'
+            },
+            {
+                id: 2,
+                type: 'bonus',
+                badge: 'BÔNUS 2',
+                title: 'Calendário de Alerta Horta Saudável',
+                desc: 'Organização sazonal e cronograma de cuidados preventivos contra pragas ao longo do ano.',
+                img: 'https://i.ibb.co/Mxzng0Vr/image.png',
+                link: 'https://drive.google.com/file/d/1glAsl1cTku-PoMnzGnIg5-Uf4tB5UdnC/view'
+            },
+            {
+                id: 3,
+                type: 'bonus',
+                badge: 'BÔNUS 3',
+                title: 'Ficha de Diagnóstico Visual',
+                desc: 'Pranchetas e formulários para anotações de campo e monitoramento de culturas no dia a dia.',
+                img: 'https://i.ibb.co/9mPSJGvN/image.png',
+                link: 'https://drive.google.com/file/d/1wN8wRU1rcMZ0VRQR5xMY9GxLJgyaYpUA/view'
+            },
+            {
+                id: 4,
+                type: 'bonus',
+                badge: 'BÔNUS 4',
+                title: 'Miniatlas dos Insetos Comuns',
+                desc: 'Guia de bolso para reconhecimento rápido de ácaros, lagartas e pulgões nas suas plantas.',
+                img: 'https://i.ibb.co/pvY6DCvZ/image.png',
+                link: 'https://drive.google.com/file/d/14MXLfxz3n-Rm-wyz0HxMwKocHG1d_XqP/view'
+            }
+        ];
+
+        // ── Progress tracking ──
+        const storageKey = `progress_${userEmail}`;
+        let completedIds = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+        const progressMessages = [
+            'Clique no ✓ de cada card para registrar seu progresso!',
+            'Ótimo começo! Continue avançando 🌱',
+            'Você está no caminho certo! 💪',
+            'Mais da metade concluída! Incrível 🚀',
+            'Quase lá! Falta pouco! ⭐',
+            '🏆 Parabéns! Você concluiu todos os materiais!'
+        ];
+
+        function updateProgress() {
+            const availableMaterials = materials.filter(item => !(item.type === 'bonus' && userPlan === 'basico'));
+            // Filter completedIds to only count ones that are actually available to the user
+            const availableCompletedIds = completedIds.filter(id => availableMaterials.some(m => m.id === id));
+            const count = availableCompletedIds.length;
+            const total = availableMaterials.length;
+            const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('progress-text').textContent = `${count} / ${total} concluídos`;
+            const msgIndex = Math.min(count, progressMessages.length - 1);
+            document.getElementById('progress-msg').textContent = progressMessages[msgIndex];
+        }
+
+        function toggleTrack(id) {
+            // Find item
+            const item = materials.find(m => m.id === id);
+            if (item && item.type === 'bonus' && userPlan === 'basico') {
+                return; // Do nothing if locked
+            }
+
+            const index = completedIds.indexOf(id);
+            if (index > -1) {
+                completedIds.splice(index, 1);
+            } else {
+                completedIds.push(id);
+                confetti({
+                    particleCount: 90,
+                    spread: 65,
+                    origin: { y: 0.75 },
+                    colors: ['#4caf50', '#1b3a24', '#c8e6c9', '#ffffff']
+                });
+            }
+            localStorage.setItem(storageKey, JSON.stringify(completedIds));
+            updateProgress();
+            renderMaterials();
+        }
+
+        function renderMaterials() {
+            const container = document.getElementById('materials-container');
+            container.innerHTML = '';
+
+            // Filter materials visible count for progress bar calculation
+            const availableMaterials = materials.filter(item => !(item.type === 'bonus' && userPlan === 'basico'));
+
+            materials.forEach(item => {
+                const isCompleted = completedIds.includes(item.id);
+                const isLocked = item.type === 'bonus' && userPlan === 'basico';
+                const card = document.createElement('div');
+                card.className = `card${isCompleted ? ' completed-card' : ''}${isLocked ? ' locked-card' : ''}`;
+
+                let actionsHtml = '';
+                if (isLocked) {
+                    actionsHtml = `
+                        <div class="lock-overlay-badge">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Disponível no Plano Completo
+                        </div>
+                    `;
+                } else {
+                    actionsHtml = `
+                        <a href="${item.link}" target="_blank" class="open-btn">ABRIR MATERIAL</a>
+                        <button
+                            class="track-btn${isCompleted ? ' completed' : ''}"
+                            onclick="toggleTrack(${item.id})"
+                            aria-label="${isCompleted ? 'Desmarcar material' : 'Marcar como concluído'}"
+                            title="${isCompleted ? 'Desmarcar' : 'Marcar como lido'}"
+                        >
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </button>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="card-image-wrapper">
+                        <span class="card-badge${item.type === 'principal' ? ' badge-main' : ''}">${item.badge}</span>
+                        <img src="${item.img}" alt="${item.title}" loading="lazy">
+                        ${isLocked ? `
+                            <div class="lock-blur-overlay">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                        ` : ''}
+                        <div class="completed-stamp${isCompleted && !isLocked ? ' visible' : ''}">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>${item.title}</h3>
+                        <p>${item.desc}</p>
+                        <div class="card-actions">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // ── Init ──
+        renderMaterials();
+        updateProgress();
+    </script>
+</body>
+</html>
