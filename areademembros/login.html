@@ -230,7 +230,7 @@
                 }
 
                 // Redirect to dashboard page with parameters
-                const targetUrl = `dashboard.html?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.nome)}&plano=${encodeURIComponent(data.plano)}`;
+                const targetUrl = `/dashboard?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.nome)}&plano=${encodeURIComponent(data.plano)}`;
                 window.location.href = targetUrl;
             } catch (err) {
                 console.error(err);

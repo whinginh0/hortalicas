@@ -18,12 +18,12 @@ server { \
     \
     # Redirecionar /login para a página correspondente \
     location = /login { \
-        try_files /areademembros/login.html =404; \
+        try_files /areademembros/login.html$is_args$args =404; \
     } \
     \
     # Redirecionar /dashboard para o painel de membros \
     location = /dashboard { \
-        try_files /areademembros/dashboard.html =404; \
+        try_files /areademembros/dashboard.html$is_args$args =404; \
     } \
     \
     # Tratar arquivos estáticos de areademembros \
