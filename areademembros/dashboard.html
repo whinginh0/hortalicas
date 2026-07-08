@@ -654,6 +654,11 @@
         localStorage.setItem('member_name', userName || 'Agricultor');
         localStorage.setItem('member_plano', userPlan);
 
+        // Limpar os parâmetros da URL na barra de endereço (deixando apenas /dashboard)
+        if (window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         // ── Populate UI with user info ──
         const displayName = userName || 'Agricultor';
         const firstNameRaw = displayName.split(' ')[0];
