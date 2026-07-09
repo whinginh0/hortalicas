@@ -722,6 +722,15 @@
                 desc: 'Guia de bolso para reconhecimento rápido de ácaros, lagartas e pulgões nas suas plantas.',
                 img: 'https://i.ibb.co/pvY6DCvZ/image.png',
                 link: 'https://drive.google.com/file/d/14MXLfxz3n-Rm-wyz0HxMwKocHG1d_XqP/view'
+            },
+            {
+                id: 5,
+                type: 'orderbump',
+                badge: 'OFERTA ESPECIAL',
+                title: '250 Defensivos e Produtos para Hortaliças Ilustrados',
+                desc: 'Guia completo de defensivos, produtos e dosagens recomendadas para manter sua horta protegida.',
+                img: 'https://i.ibb.co/68HghKDs/capa_defensivos.png',
+                link: 'https://drive.google.com/file/d/1FghLaRiFc9d66sly7wt7UuH2s_lkOewF/view'
             }
         ];
 
@@ -739,7 +748,11 @@
         ];
 
         function updateProgress() {
-            const availableMaterials = materials.filter(item => !(item.type === 'bonus' && userPlan === 'basico'));
+            const availableMaterials = materials.filter(item => {
+                if (item.type === 'bonus' && userPlan === 'basico') return false;
+                if (item.type === 'orderbump' && !userPlan.includes('orderbump')) return false;
+                return true;
+            });
             // Filter completedIds to only count ones that are actually available to the user
             const availableCompletedIds = completedIds.filter(id => availableMaterials.some(m => m.id === id));
             const count = availableCompletedIds.length;
@@ -749,13 +762,20 @@
             document.getElementById('progress-text').textContent = `${count} / ${total} concluídos`;
             const msgIndex = Math.min(count, progressMessages.length - 1);
             document.getElementById('progress-msg').textContent = progressMessages[msgIndex];
+
+            // Update header badge dynamically
+            const badgeEl = document.querySelector('.section-badge');
+            if (badgeEl) {
+                badgeEl.textContent = `${total} ${total === 1 ? 'material' : 'materiais'}`;
+            }
         }
 
         function toggleTrack(id) {
             // Find item
             const item = materials.find(m => m.id === id);
-            if (item && item.type === 'bonus' && userPlan === 'basico') {
-                return; // Do nothing if locked
+            if (item) {
+                if (item.type === 'bonus' && userPlan === 'basico') return;
+                if (item.type === 'orderbump' && !userPlan.includes('orderbump')) return;
             }
 
             const index = completedIds.indexOf(id);
@@ -779,12 +799,19 @@
             const container = document.getElementById('materials-container');
             container.innerHTML = '';
 
-            // Filter materials visible count for progress bar calculation
-            const availableMaterials = materials.filter(item => !(item.type === 'bonus' && userPlan === 'basico'));
-
             materials.forEach(item => {
                 const isCompleted = completedIds.includes(item.id);
-                const isLocked = item.type === 'bonus' && userPlan === 'basico';
+                let isLocked = false;
+                let lockMessage = 'Disponível no Plano Completo';
+
+                if (item.type === 'bonus' && userPlan === 'basico') {
+                    isLocked = true;
+                    lockMessage = 'Disponível no Plano Completo';
+                } else if (item.type === 'orderbump' && !userPlan.includes('orderbump')) {
+                    isLocked = true;
+                    lockMessage = 'Adquira este Guia Especial';
+                }
+
                 const card = document.createElement('div');
                 card.className = `card${isCompleted ? ' completed-card' : ''}${isLocked ? ' locked-card' : ''}`;
 
@@ -796,7 +823,7 @@
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
-                            Disponível no Plano Completo
+                            ${lockMessage}
                         </div>
                     `;
                 } else {
