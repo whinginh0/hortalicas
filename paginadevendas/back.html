@@ -2336,7 +2336,7 @@
             <!-- PLAN CARDS GRID -->
             <div class="plans-grid">
                 <!-- Plano Básico -->
-                <div class="plan-card plan-basic">
+                <div class="plan-card plan-featured">
                     <div class="plan-card-header">
                         <h3>Plano Básico</h3>
                         <p class="plan-desc">Para quem deseja acessar apenas o material principal.</p>
@@ -2345,7 +2345,7 @@
                     <div class="plan-price-block">
                         <span class="price-sub">ACESSO IMEDIATO POR</span>
                         <div class="price-main">
-                            <span class="price-val">R$ 10,00</span>
+                            <span class="price-val">R$ 7,90</span>
                             <span class="price-period">/ PAGAMENTO ÚNICO</span>
                         </div>
                     </div>
@@ -2405,7 +2405,7 @@
                         </li>
                     </ul>
 
-                    <a href="#" class="plan-btn" id="btn-plano-basico">QUERO O PLANO BÁSICO</a>
+                    <a href="https://ggcheckout.app/checkout/v5/Yc1WzhjsMWhIZxb1bXaC" class="plan-btn btn-featured">QUERO O PLANO BÁSICO</a>
 
                     <span class="plan-security">
                         <svg viewBox="0 0 24 24">
@@ -2429,7 +2429,7 @@
                     <div class="plan-price-block">
                         <span class="price-sub">ACESSO IMEDIATO POR</span>
                         <div class="price-main">
-                            <span class="price-val">R$ 27,90</span>
+                            <span class="price-val">R$ 14,90</span>
                             <span class="price-period">/ PAGAMENTO ÚNICO</span>
                         </div>
                     </div>
@@ -2491,7 +2491,7 @@
                         </ul>
                     </div>
 
-                    <a href="https://ggcheckout.app/checkout/v5/TkqAKlLxQpA9YrMzGqho" class="plan-btn btn-featured">QUERO O PLANO COMPLETO</a>
+                    <a href="https://ggcheckout.app/checkout/v5/7kPl2SdDADGOyHz7wwX1" class="plan-btn btn-featured">QUERO O PLANO COMPLETO</a>
 
                     <span class="plan-security">
                         <svg viewBox="0 0 24 24">
@@ -2620,37 +2620,6 @@
         </div>
     </footer>
 
-    <!-- UPSELL MODAL -->
-    <div id="upsell-modal" class="upsell-modal-overlay">
-        <div class="upsell-modal-box">
-            <button class="upsell-close-btn" id="btn-close-modal" aria-label="Fechar">&#x2715;</button>
-
-            <div class="upsell-badge">🔥 OFERTA EXCLUSIVA — SÓ AGORA!</div>
-
-            <h2 class="upsell-title">Espera! Antes de continuar...</h2>
-            <p class="upsell-subtitle">Você está prestes a perder os <strong>4 bônus exclusivos</strong> avaliados em R$&nbsp;138,00.</p>
-
-            <div class="upsell-price-block">
-                <span class="upsell-from">De <s>R$ 27,90</s></span>
-                <span class="upsell-price">R$ 17,90</span>
-                <span class="upsell-period">pagamento único • acesso vitalício</span>
-            </div>
-
-            <ul class="upsell-bonus-list">
-                <li>🎁 Bônus 1: Mapa Visual de Sintomas nas Folhas</li>
-                <li>🎁 Bônus 2: Calendário de Alerta Horta Saudável</li>
-                <li>🎁 Bônus 3: Ficha de Diagnóstico Visual</li>
-                <li>🎁 Bônus 4: Miniatlas dos Insetos Comuns</li>
-            </ul>
-
-            <a href="https://ggcheckout.app/checkout/v5/AlcZUe7ejXeDQO0vBvw5" class="upsell-cta-btn">✅ QUERO O PLANO COMPLETO POR R$ 17,90</a>
-
-            <a href="https://ggcheckout.app/checkout/v5/uXjEfzejmi8EbvwxSw5S" class="upsell-dismiss-link" id="btn-dismiss-modal">
-                Não, eu quero o Plano Básico mesmo
-            </a>
-        </div>
-    </div>
-
     <script>
         // Scroll Animation observer (fade-in)
         const observerOptions = {
@@ -2719,36 +2688,6 @@
             });
         });
 
-        // Upsell Modal Logic
-        const btnBasico = document.getElementById('btn-plano-basico');
-        const upsellModal = document.getElementById('upsell-modal');
-        const btnCloseModal = document.getElementById('btn-close-modal');
-        const btnDismissModal = document.getElementById('btn-dismiss-modal');
-
-        if (btnBasico) {
-            btnBasico.addEventListener('click', function(e) {
-                e.preventDefault();
-                upsellModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-        }
-
-        function closeModal() {
-            upsellModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-
-        if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
-        if (btnDismissModal) btnDismissModal.addEventListener('click', function(e) {
-            // Let the natural navigation go to the basic plan checkout
-            closeModal();
-        });
-
-        // Close on backdrop click
-        upsellModal.addEventListener('click', function(e) {
-            if (e.target === upsellModal) closeModal();
-        });
-
         // Dynamic UTM parameter forwarding script
         (function() {
             // 1. Get current URL query parameters
@@ -2788,25 +2727,6 @@
                 const href = anchor.getAttribute('href');
                 if (href && href.includes('ggcheckout.app')) {
                     anchor.setAttribute('href', appendParamsToUrl(href));
-                }
-            });
-        })();
-
-        // Back Redirect & Exit Intent Logic
-        (function() {
-            let backUrl = window.location.origin + '/back' + window.location.search;
-            
-            // Push current state to allow intercepting back button
-            history.pushState(null, null, window.location.href);
-            
-            window.addEventListener('popstate', function(event) {
-                window.location.replace(backUrl);
-            });
-
-            // Exit Intent for desktop (when mouse leaves top viewport)
-            document.addEventListener('mouseleave', function(e) {
-                if (e.clientY < 20) {
-                    window.location.replace(backUrl);
                 }
             });
         })();

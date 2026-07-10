@@ -26,6 +26,11 @@ server {
         rewrite ^/dashboard$ /areademembros/dashboard.html break;
     }
 
+    # Redirecionar /back para a página de vendas de back redirect (downsell)
+    location = /back {
+        rewrite ^/back$ /paginadevendas/back.html break;
+    }
+
     # Tratar arquivos estáticos de areademembros
     location /areademembros/ {
         try_files $uri $uri/ =404;
