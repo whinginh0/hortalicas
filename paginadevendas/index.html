@@ -2802,13 +2802,6 @@
             window.addEventListener('popstate', function(event) {
                 window.location.replace(backUrl);
             });
-
-            // Exit Intent for desktop (when mouse leaves top viewport)
-            document.addEventListener('mouseleave', function(e) {
-                if (e.clientY < 20) {
-                    window.location.replace(backUrl);
-                }
-            });
         })();
     </script>
 
