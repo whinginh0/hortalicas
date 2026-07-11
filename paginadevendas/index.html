@@ -1823,7 +1823,7 @@
                     <img src="https://i.ibb.co/m5Ft212V/image.png" alt="Material Ilustrado + 4 Bônus" class="mockup-image">
                 </div>
 
-                <a href="#planos" class="btn btn-accent">Quero Acessar Agora</a>
+                <a href="#planos" class="btn btn-accent" id="btn-hero-planos">Quero Acessar Agora</a>
 
             </div>
         </div>
@@ -2792,12 +2792,27 @@
         (function() {
             let backUrl = window.location.origin + '/back' + window.location.search;
             
-            // Push current state to allow intercepting back button
-            history.pushState(null, null, window.location.href);
+            // Push state to robustly handle popstate back redirect without breaking hash navigation
+            history.pushState({back: true}, null, null);
+            history.pushState(null, null, null);
             
             window.addEventListener('popstate', function(event) {
-                window.location.replace(backUrl);
+                if (event.state && event.state.back) {
+                    window.location.replace(backUrl);
+                }
             });
+
+            // Smooth scroll for the first button to avoid triggering popstate/hash change redirect
+            const btnHeroPlanos = document.getElementById('btn-hero-planos');
+            if (btnHeroPlanos) {
+                btnHeroPlanos.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.getElementById('planos');
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            }
         })();
     </script>
 
