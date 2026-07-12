@@ -170,7 +170,9 @@ O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout est
 
         <!-- AVISO IMPORTANTE -->
         <div class="important-notice">
-            <strong>⚠️ AVISO IMPORTANTE:</strong> Se você não encontrar este e-mail na sua Caixa de Entrada principal, verifique a aba de <strong>Promoções, Spam ou Lixo Eletrônico</strong>. Mova este e-mail para a Entrada principal para garantir que continue recebendo atualizações futuras.
+            <strong>⚠️ AVISO IMPORTANTE:</strong> <br>
+            1. Se não encontrar este e-mail na sua Caixa de Entrada, verifique a aba de <strong>Promoções, Spam ou Lixo Eletrônico</strong>.<br>
+            2. <strong>Acesso Sem Senha:</strong> O login na área de membros é feito inserindo apenas o seu e-mail de compra (<strong>{{params.EMAIL}}</strong>). Não é necessária nenhuma senha convencional para acessar.
         </div>
 
         <p>Olá, <strong>{{params.NOME}}</strong>!</p>
