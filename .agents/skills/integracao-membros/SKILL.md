@@ -30,31 +30,31 @@ Para cada projeto, deve ser criada uma tabela de usuários para liberar o acesso
 
 Quando uma compra é aprovada, a plataforma de checkout envia um POST HTTP para o endpoint do webhook. O webhook deve tratar compras normais e compras que contêm **Order Bump**.
 
-### Payload Recebido do Checkout (Exemplo Completo com Order Bump)
+### Payload Recebido do Checkout (Exemplo Genérico com Order Bump)
 ```json
 {
   "event": "order.approved",
   "status": "approved",
   "purchase": {
-    "id": "pay_9875189234",
-    "total_amount": 37.90
+    "id": "[ID_DA_TRANSACAO]",
+    "total_amount": [VALOR_TOTAL]
   },
   "customer": {
-    "name": "João da Silva",
-    "email": "joaosilva@email.com"
+    "name": "[NOME_DO_CLIENTE]",
+    "email": "[EMAIL_DO_CLIENTE]"
   },
   "product": {
-    "id": "prod_1",
-    "name": "+150 Pragas e Doenças em Hortaliças Ilustradas",
+    "id": "[ID_DO_PRODUTO]",
+    "name": "[NOME_DO_PRODUTO_PRINCIPAL]",
     "plan": {
-      "name": "Plano Completo"
+      "name": "[NOME_DO_PLANO]"
     }
   },
   "order_bumps": [
     {
-      "id": "bump_1",
-      "name": "100 Defensivos e Produtos para Hortaliças Ilustrados",
-      "amount": 10.00
+      "id": "[ID_DO_ORDERBUMP]",
+      "name": "[NOME_DO_ORDERBUMP]",
+      "amount": [VALOR_DO_ORDERBUMP]
     }
   ]
 }
@@ -68,7 +68,7 @@ Quando uma compra é aprovada, a plataforma de checkout envia um POST HTTP para 
    - Insere ou atualiza o comprador na tabela `usuarios`:
      ```sql
      INSERT INTO usuarios (nome, email, plano, status)
-     VALUES ('João da Silva', 'joaosilva@email.com', 'completo_orderbump', 'approved')
+     VALUES ('[NOME_DO_CLIENTE]', '[EMAIL_DO_CLIENTE]', '[IDENTIFICADOR_DO_PLANO]', 'approved')
      ON CONFLICT (email)
      DO UPDATE SET plano = EXCLUDED.plano, status = EXCLUDED.status;
      ```
@@ -88,30 +88,30 @@ Quando uma compra é aprovada, a plataforma de checkout envia um POST HTTP para 
 ```json
 {
   "sender": {
-    "name": "Hortaliças Ilustradas",
-    "email": "contato@hortalicas.com"
+    "name": "[NOME_DO_SEU_PROJETO_OU_PRODUTO]",
+    "email": "[EMAIL_DE_CONTATO_E_SUPORTE]"
   },
   "to": [
     {
-      "email": "joaosilva@email.com",
-      "name": "João da Silva"
+      "email": "[EMAIL_DO_CLIENTE]",
+      "name": "[NOME_DO_CLIENTE]"
     }
   ],
-  "subject": "Seu acesso ao Material Ilustrado foi liberado!",
+  "subject": "Seu acesso ao [NOME_DO_PRODUTO_OU_MATERIAL] foi liberado!",
   "htmlContent": "HTML_CONTENT_AQUI",
   "params": {
-    "NOME": "João da Silva",
-    "EMAIL": "joaosilva@email.com",
-    "PLANO": "Plano Completo",
-    "COMPROU_ORDERBUMP": true,
-    "NOME_ORDERBUMP": "100 Defensivos e Produtos para Hortaliças Ilustrados",
-    "LINK_MEMBROS": "https://areademembros.hortalicas.com/login.html"
+    "NOME": "[NOME_DO_CLIENTE]",
+    "EMAIL": "[EMAIL_DO_CLIENTE]",
+    "PLANO": "[NOME_DO_PLANO_COMPRADO]",
+    "COMPROU_ORDERBUMP": [TRUE_OU_FALSE],
+    "NOME_ORDERBUMP": "[NOME_DO_ORDERBUMP_ADICIONAL]",
+    "LINK_MEMBROS": "[LINK_DA_SUA_AREA_DE_MEMBROS]"
   }
 }
 ```
 
 ### Template HTML do E-mail Transacional
-O template HTML enviado na chave `htmlContent` (ou configurado no painel do Brevo) deve seguir estritamente o seguinte layout visual e de conteúdo:
+O template HTML enviado na chave `htmlContent` (ou configurado no painel do Brevo) deve seguir estritamente o seguinte layout visual e de conteúdo genérico:
 
 ```html
 <!DOCTYPE html>
