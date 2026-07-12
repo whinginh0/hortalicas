@@ -5,17 +5,18 @@ description: Instâncias de integração de área de membros, bancos de dados Su
 
 # Skill de Integração da Área de Membros
 
-Esta skill guia o agente no processo de configuração e integração de novas áreas de membros conectadas ao banco de dados Supabase, envios de e-mails transacionais altamente estruturados com Brevo, e tratamento de webhooks de checkout da **GGCheckout**.
+Esta skill guia o agente no processo de configuração e integração de novas áreas de membros conectadas ao banco de dados Supabase, envios de e-mails transacionais com Brevo, e tratamento de webhooks de checkout da **GGCheckout** via **Supabase Edge Functions**.
 
 ---
 
 ## 1. Banco de Dados: Supabase
 
-Para cada projeto, deve ser criada uma tabela de usuários para liberar o acesso via e-mail.
+> [!IMPORTANT]
+> O usuário **NÃO** irá criar as tabelas, colunas, RLS ou políticas manualmente. O próprio agente Antigravity, utilizando as ferramentas de MCP do Supabase (ou rodando scripts SQL via API de administrador do banco), deve criar e configurar toda a infraestrutura de banco de dados automaticamente.
 
 ### Estrutura da Tabela `usuarios`
 - **Nome da Tabela**: `usuarios`
-- **RLS (Row Level Security)**: Habilitado. Adicione uma política de leitura pública (`Select`) anon para permitir que o formulário de login pesquise se o e-mail inserido possui acesso.
+- **RLS (Row Level Security)**: Habilitado. O agente deve criar uma política de leitura pública (`Select`) anon para permitir que o formulário de login pesquise se o e-mail inserido possui acesso.
 - **Colunas**:
   - `id` (int8 ou uuid): Chave primária.
   - `created_at` (timestamptz): Padrão `now()`.
@@ -26,11 +27,11 @@ Para cada projeto, deve ser criada uma tabela de usuários para liberar o acesso
 
 ---
 
-## 2. Webhook de Integração (GGCheckout -> Supabase)
+## 2. Webhook via Supabase Edge Function (GGCheckout -> Edge Function)
 
-Quando uma compra é aprovada, a **GGCheckout** envia um POST HTTP para o endpoint do seu webhook contendo o JSON abaixo. O webhook deve identificar o plano principal e verificar se há **Order Bump** na lista de `products`.
+A integração entre a **GGCheckout** e o **Supabase** deve ser feita através de uma **Supabase Edge Function** criada e implantada pelo agente. Esta função recebe o POST do webhook da GGCheckout, processa o plano/order bump, insere os dados no banco de dados e dispara o e-mail transacional do Brevo.
 
-### Payload Recebido da GGCheckout
+### Payload da GGCheckout (Formato de Entrada)
 ```json
 {
   "event": "pix.paid",
@@ -68,80 +69,100 @@ Quando uma compra é aprovada, a **GGCheckout** envia um POST HTTP para o endpoi
       "title": "E-book Bonus",
       "price": 2700
     }
-  ],
-  "webhook": {
-    "id": "webhook_xyz789",
-    "businessId": "woYVFMp2mOOJnU0Mrbn8AlhhpmD2",
-    "events": ["pix.paid", "pix.generated"]
-  },
-  "utm_source": "facebook",
-  "utm_medium": "cpc",
-  "utm_campaign": "minha-campanha",
-  "utm_content": null,
-  "utm_term": null,
-  "customerIp": "177.45.23.100"
+  ]
 }
 ```
 
-### Lógica de Mapeamento no Webhook
-1. **Verificação de Evento**:
-   - Responda apenas a eventos que representem sucesso no pagamento (ex: `pix.paid`, `card.paid`, `ticket.paid`, ou quando `payment.status === "paid"`).
-2. **Nome e E-mail do Cliente**:
-   - Extraídos de `customer.name` e `customer.email`.
-3. **Mapeamento de Planos e Order Bump**:
-   - O plano principal padrão é baseado no `product.title`.
-   - O webhook deve iterar pelo array `products`. Se encontrar algum item onde `type === "orderbump"`, o script de integração deve:
-     - Definir uma flag/parâmetro `comprou_orderbump = true`.
-     - Guardar o nome do order bump (campo `title`, ex: `"E-book Bonus"`).
-     - Alterar a coluna `plano` no Supabase para refletir que o usuário levou o produto com o order bump (ex: `completo_orderbump`).
-4. **Inserção no Banco (Supabase)**:
-   - Faz um `upsert` baseado no e-mail:
-     ```sql
-     INSERT INTO usuarios (nome, email, plano, status)
-     VALUES ('Joao Silva', 'joao@email.com', 'completo_orderbump', 'paid')
-     ON CONFLICT (email)
-     DO UPDATE SET plano = EXCLUDED.plano, status = EXCLUDED.status;
-     ```
-5. **Envio da API do Brevo**:
-   - Dispara a requisição POST de e-mail transacional.
+### Código da Edge Function (Deno/TypeScript)
+O agente deve implementar a função (ex: `supabase/functions/gg-webhook/index.ts`) com a lógica abaixo:
+
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-client-js@2"
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')!;
+
+serve(async (req) => {
+  try {
+    const payload = await req.json();
+    
+    // 1. Filtrar eventos de pagamento aprovado
+    const status = payload.payment?.status;
+    if (status !== 'paid' && payload.event !== 'pix.paid') {
+      return new Response(JSON.stringify({ message: "Ignore non-paid events" }), { status: 200 });
+    }
+
+    const customerName = payload.customer.name;
+    const customerEmail = payload.customer.email.toLowerCase().trim();
+    const mainProductTitle = payload.product.title;
+
+    // 2. Detectar se comprou Order Bump na lista de produtos
+    const products = payload.products || [];
+    const orderBumpItem = products.find((p: any) => p.type === 'orderbump');
+    
+    const comprouOrderbump = !!orderBumpItem;
+    const nomeOrderbump = orderBumpItem ? orderBumpItem.title : '';
+    
+    // Definir plano final no banco de dados
+    const planoFinal = comprouOrderbump ? 'completo_orderbump' : 'completo';
+
+    // 3. Upsert no Supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { error: dbError } = await supabaseClient
+      .from('usuarios')
+      .upsert({
+        nome: customerName,
+        email: customerEmail,
+        plano: planoFinal,
+        status: 'paid'
+      }, { onConflict: 'email' });
+
+    if (dbError) throw dbError;
+
+    // 4. Disparar e-mail no Brevo
+    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: "[NOME_DO_SEU_PROJETO_OU_PRODUTO]", email: "[EMAIL_DE_CONTATO_E_SUPORTE]" },
+        to: [{ email: customerEmail, name: customerName }],
+        subject: "Seu acesso ao [NOME_DO_PRODUTO_OU_MATERIAL] foi liberado!",
+        templateId: [OPCIONAL_ID_DO_TEMPLATE_SE_HOUVER], // Ou passar htmlContent diretamente
+        params: {
+          NOME: customerName,
+          EMAIL: customerEmail,
+          PLANO: comprouOrderbump ? "Plano Completo + Bônus" : "Plano Completo",
+          COMPROU_ORDERBUMP: comprouOrderbump,
+          NOME_ORDERBUMP: nomeOrderbump,
+          LINK_MEMBROS: "[LINK_DA_SUA_AREA_DE_MEMBROS]"
+        }
+      })
+    });
+
+    if (!brevoResponse.ok) {
+      const errText = await brevoResponse.text();
+      console.error("Erro Brevo:", errText);
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err) {
+    console.error("Erro no processamento:", err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+});
+```
 
 ---
 
 ## 3. Configuração do E-mail de Acesso no Brevo (Sendinblue)
 
-- **API Endpoint**: `https://api.brevo.com/v3/smtp/email`
-- **Headers**:
-  - `api-key`: `SUA_CHAVE_API_BREVO`
-  - `content-type`: `application/json`
-
-### Payload JSON de Envio para a API do Brevo
-```json
-{
-  "sender": {
-    "name": "[NOME_DO_SEU_PROJETO_OU_PRODUTO]",
-    "email": "[EMAIL_DE_CONTATO_E_SUPORTE]"
-  },
-  "to": [
-    {
-      "email": "joao@email.com",
-      "name": "Joao Silva"
-    }
-  ],
-  "subject": "Seu acesso ao [NOME_DO_PRODUTO_OU_MATERIAL] foi liberado!",
-  "htmlContent": "HTML_CONTENT_AQUI",
-  "params": {
-    "NOME": "Joao Silva",
-    "EMAIL": "joao@email.com",
-    "PLANO": "Plano Completo",
-    "COMPROU_ORDERBUMP": true,
-    "NOME_ORDERBUMP": "E-book Bonus",
-    "LINK_MEMBROS": "[LINK_DA_SUA_AREA_DE_MEMBROS]"
-  }
-}
-```
-
 ### Template HTML do E-mail Transacional
-O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout estruturado:
+O template HTML enviado no campo `htmlContent` (ou cadastrado no painel do Brevo) deve seguir o seguinte layout estruturado:
 
 ```html
 <!DOCTYPE html>
@@ -168,11 +189,9 @@ O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout est
             <h2>Acesso Liberado! 🚀</h2>
         </div>
 
-        <!-- AVISO IMPORTANTE -->
+        <!-- AVISO IMPORTANTE: APENAS LOGIN SEM SENHA CONVENCIONAL -->
         <div class="important-notice">
-            <strong>⚠️ AVISO IMPORTANTE:</strong> <br>
-            1. Se não encontrar este e-mail na sua Caixa de Entrada, verifique a aba de <strong>Promoções, Spam ou Lixo Eletrônico</strong>.<br>
-            2. <strong>Acesso Sem Senha:</strong> O login na área de membros é feito inserindo apenas o seu e-mail de compra (<strong>{{params.EMAIL}}</strong>). Não é necessária nenhuma senha convencional para acessar.
+            <strong>⚠️ COMO ACESSAR:</strong> O seu login é realizado inserindo apenas o seu e-mail de compra (<strong>{{params.EMAIL}}</strong>). Não é necessário criar ou utilizar nenhuma senha convencional no sistema para acessar.
         </div>
 
         <p>Olá, <strong>{{params.NOME}}</strong>!</p>
@@ -196,7 +215,7 @@ O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout est
         </div>
         {% endif %}
 
-        <p>Para entrar no seu painel de estudos, clique no botão verde abaixo e faça login inserindo o seu e-mail cadastrado (<strong>{{params.EMAIL}}</strong>):</p>
+        <p>Para entrar no seu painel de estudos, clique no botão abaixo e faça login inserindo o seu e-mail cadastrado:</p>
 
         <!-- BOTÃO DE LOGIN -->
         <div style="text-align: center;">
