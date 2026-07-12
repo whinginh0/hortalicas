@@ -111,7 +111,7 @@ Quando uma compra é aprovada, a plataforma de checkout envia um POST HTTP para 
 ```
 
 ### Template HTML do E-mail Transacional
-O template HTML enviado na chave `htmlContent` (ou configurado no painel do Brevo) deve seguir estritamente o seguinte layout visual e de conteúdo genérico:
+O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout visual com cores parametrizáveis (placeholders):
 
 ```html
 <!DOCTYPE html>
@@ -122,12 +122,12 @@ O template HTML enviado na chave `htmlContent` (ou configurado no painel do Brev
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; }
         .wrapper { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; }
         .header { text-align: center; margin-bottom: 24px; }
-        .important-notice { background-color: #ffebee; border-left: 4px solid #d32f2f; color: #c62828; padding: 15px; border-radius: 4px; margin-bottom: 24px; font-size: 0.9rem; }
-        .plan-box { background-color: #f1f8e9; border: 1px solid #c8e6c9; border-radius: 6px; padding: 15px; margin-bottom: 24px; }
-        .plan-title { font-weight: bold; color: #1b5e20; }
-        .bump-card { background: linear-gradient(135deg, #fff9c4, #fff59d); border: 2px dashed #fbc02d; border-radius: 8px; padding: 15px; margin-bottom: 24px; text-align: center; }
-        .bump-title { font-weight: bold; color: #f57f17; font-size: 0.95rem; }
-        .cta-button { display: inline-block; background-color: #4caf50; color: #ffffff !important; font-weight: bold; text-decoration: none; padding: 14px 28px; border-radius: 30px; margin: 15px 0; text-align: center; }
+        .important-notice { background-color: [COR_AVISO_IMPORTANTE_FUNDO]; border-left: 4px solid [COR_AVISO_IMPORTANTE_BORDA]; color: [COR_AVISO_IMPORTANTE_TEXTO]; padding: 15px; border-radius: 4px; margin-bottom: 24px; font-size: 0.9rem; }
+        .plan-box { background-color: [COR_CAIXA_PLANO_FUNDO]; border: 1px solid [COR_CAIXA_PLANO_BORDA]; border-radius: 6px; padding: 15px; margin-bottom: 24px; }
+        .plan-title { font-weight: bold; color: [COR_CAIXA_PLANO_TEXTO]; }
+        .bump-card { background: linear-gradient(135deg, [COR_CARD_BUMP_FUNDO_1], [COR_CARD_BUMP_FUNDO_2]); border: 2px dashed [COR_CARD_BUMP_BORDA]; border-radius: 8px; padding: 15px; margin-bottom: 24px; text-align: center; }
+        .bump-title { font-weight: bold; color: [COR_CARD_BUMP_TEXTO]; font-size: 0.95rem; }
+        .cta-button { display: inline-block; background-color: [COR_BOTAO_CTA_FUNDO]; color: [COR_BOTAO_CTA_TEXTO] !important; font-weight: bold; text-decoration: none; padding: 14px 28px; border-radius: 30px; margin: 15px 0; text-align: center; }
         .raw-link { font-size: 0.8rem; color: #757575; word-break: break-all; margin-top: 10px; }
         .footer { font-size: 0.75rem; color: #9e9e9e; text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 15px; }
     </style>
