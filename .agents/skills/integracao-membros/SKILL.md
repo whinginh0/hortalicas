@@ -5,7 +5,7 @@ description: Instâncias de integração de área de membros, bancos de dados Su
 
 # Skill de Integração da Área de Membros
 
-Esta skill guia o agente no processo de configuração e integração de novas áreas de membros conectadas ao banco de dados Supabase, envios de e-mails transacionais altamente estruturados com Brevo, e tratamento de webhooks completos de checkout (com suporte a Order Bumps).
+Esta skill guia o agente no processo de configuração e integração de novas áreas de membros conectadas ao banco de dados Supabase, envios de e-mails transacionais altamente estruturados com Brevo, e tratamento de webhooks de checkout da **GGCheckout**.
 
 ---
 
@@ -22,58 +22,88 @@ Para cada projeto, deve ser criada uma tabela de usuários para liberar o acesso
   - `nome` (text): Nome completo do comprador.
   - `email` (text): E-mail do comprador (Unique e indexado em lowercase).
   - `plano` (text): Nome identificador do plano comprado (ex: `basico`, `completo`, `completo_orderbump`).
-  - `status` (text): Estado da compra (ex: `approved`, `refunded`, `pending`).
+  - `status` (text): Estado da compra (ex: `approved`, `paid`, `refunded`).
 
 ---
 
-## 2. Webhook de Integração (Checkout -> Supabase)
+## 2. Webhook de Integração (GGCheckout -> Supabase)
 
-Quando uma compra é aprovada, a plataforma de checkout envia um POST HTTP para o endpoint do webhook. O webhook deve tratar compras normais e compras que contêm **Order Bump**.
+Quando uma compra é aprovada, a **GGCheckout** envia um POST HTTP para o endpoint do seu webhook contendo o JSON abaixo. O webhook deve identificar o plano principal e verificar se há **Order Bump** na lista de `products`.
 
-### Payload Recebido do Checkout (Exemplo Genérico com Order Bump)
+### Payload Recebido da GGCheckout
 ```json
 {
-  "event": "order.approved",
-  "status": "approved",
-  "purchase": {
-    "id": "[ID_DA_TRANSACAO]",
-    "total_amount": [VALOR_TOTAL]
-  },
+  "event": "pix.paid",
+  "createdAt": "2024-01-15T10:30:00Z",
   "customer": {
-    "name": "[NOME_DO_CLIENTE]",
-    "email": "[EMAIL_DO_CLIENTE]"
+    "name": "Joao Silva",
+    "email": "joao@email.com",
+    "document": "12345678901",
+    "phone": "5511999999999",
+    "ip": "177.45.23.100"
+  },
+  "payment": {
+    "id": "29cce702-5e7e-40da-93b0-aaa19acab32e",
+    "method": "pix.paid",
+    "paymentMethod": "pix",
+    "gateway": "pagouai",
+    "status": "paid",
+    "amount": 97.00,
+    "pixCode": "00020126580014BR.GOV.BCB.PIX..."
   },
   "product": {
-    "id": "[ID_DO_PRODUTO]",
-    "name": "[NOME_DO_PRODUTO_PRINCIPAL]",
-    "plan": {
-      "name": "[NOME_DO_PLANO]"
-    }
+    "id": "YbfsgK1Fgm0LzUsFglrn",
+    "type": "main",
+    "title": "Meu Produto Digital"
   },
-  "order_bumps": [
+  "products": [
     {
-      "id": "[ID_DO_ORDERBUMP]",
-      "name": "[NOME_DO_ORDERBUMP]",
-      "amount": [VALOR_DO_ORDERBUMP]
+      "id": "YbfsgK1Fgm0LzUsFglrn",
+      "type": "main",
+      "title": "Meu Produto Digital"
+    },
+    {
+      "id": "bump_abc123",
+      "type": "orderbump",
+      "title": "E-book Bonus",
+      "price": 2700
     }
-  ]
+  ],
+  "webhook": {
+    "id": "webhook_xyz789",
+    "businessId": "woYVFMp2mOOJnU0Mrbn8AlhhpmD2",
+    "events": ["pix.paid", "pix.generated"]
+  },
+  "utm_source": "facebook",
+  "utm_medium": "cpc",
+  "utm_campaign": "minha-campanha",
+  "utm_content": null,
+  "utm_term": null,
+  "customerIp": "177.45.23.100"
 }
 ```
 
-### Lógica do Webhook
-1. **Identificação do Plano**: 
-   - Analisa o `product.plan.name` para identificar se é Básico ou Completo.
-   - Verifica se a lista `order_bumps` não está vazia. Se contiver o item do order bump, atualiza o nome do plano para incluir a marcação do order bump (ex: `completo_orderbump`).
-2. **Upsert no Banco**:
-   - Insere ou atualiza o comprador na tabela `usuarios`:
+### Lógica de Mapeamento no Webhook
+1. **Verificação de Evento**:
+   - Responda apenas a eventos que representem sucesso no pagamento (ex: `pix.paid`, `card.paid`, `ticket.paid`, ou quando `payment.status === "paid"`).
+2. **Nome e E-mail do Cliente**:
+   - Extraídos de `customer.name` e `customer.email`.
+3. **Mapeamento de Planos e Order Bump**:
+   - O plano principal padrão é baseado no `product.title`.
+   - O webhook deve iterar pelo array `products`. Se encontrar algum item onde `type === "orderbump"`, o script de integração deve:
+     - Definir uma flag/parâmetro `comprou_orderbump = true`.
+     - Guardar o nome do order bump (campo `title`, ex: `"E-book Bonus"`).
+     - Alterar a coluna `plano` no Supabase para refletir que o usuário levou o produto com o order bump (ex: `completo_orderbump`).
+4. **Inserção no Banco (Supabase)**:
+   - Faz um `upsert` baseado no e-mail:
      ```sql
      INSERT INTO usuarios (nome, email, plano, status)
-     VALUES ('[NOME_DO_CLIENTE]', '[EMAIL_DO_CLIENTE]', '[IDENTIFICADOR_DO_PLANO]', 'approved')
+     VALUES ('Joao Silva', 'joao@email.com', 'completo_orderbump', 'paid')
      ON CONFLICT (email)
      DO UPDATE SET plano = EXCLUDED.plano, status = EXCLUDED.status;
      ```
-3. **Disparo do E-mail Transacional**:
-   - Prepara e envia os parâmetros dinâmicos para a API do Brevo.
+5. **Envio da API do Brevo**:
+   - Dispara a requisição POST de e-mail transacional.
 
 ---
 
@@ -93,25 +123,25 @@ Quando uma compra é aprovada, a plataforma de checkout envia um POST HTTP para 
   },
   "to": [
     {
-      "email": "[EMAIL_DO_CLIENTE]",
-      "name": "[NOME_DO_CLIENTE]"
+      "email": "joao@email.com",
+      "name": "Joao Silva"
     }
   ],
   "subject": "Seu acesso ao [NOME_DO_PRODUTO_OU_MATERIAL] foi liberado!",
   "htmlContent": "HTML_CONTENT_AQUI",
   "params": {
-    "NOME": "[NOME_DO_CLIENTE]",
-    "EMAIL": "[EMAIL_DO_CLIENTE]",
-    "PLANO": "[NOME_DO_PLANO_COMPRADO]",
-    "COMPROU_ORDERBUMP": [TRUE_OU_FALSE],
-    "NOME_ORDERBUMP": "[NOME_DO_ORDERBUMP_ADICIONAL]",
+    "NOME": "Joao Silva",
+    "EMAIL": "joao@email.com",
+    "PLANO": "Plano Completo",
+    "COMPROU_ORDERBUMP": true,
+    "NOME_ORDERBUMP": "E-book Bonus",
     "LINK_MEMBROS": "[LINK_DA_SUA_AREA_DE_MEMBROS]"
   }
 }
 ```
 
 ### Template HTML do E-mail Transacional
-O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout visual com cores parametrizáveis (placeholders):
+O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout estruturado:
 
 ```html
 <!DOCTYPE html>
@@ -152,13 +182,14 @@ O template HTML enviado na chave `htmlContent` deve seguir o seguinte layout vis
             <p style="margin: 5px 0 0 0; font-size: 1.1rem; font-weight: bold;">{{params.PLANO}}</p>
         </div>
 
-        <!-- CARD CONSTITUTIVO CASO TENHA COMPRADO ORDER BUMP -->
+        <!-- CARD DO ORDER BUMP CASO TENHA COMPRADO -->
         {% if params.COMPROU_ORDERBUMP %}
         <div class="bump-card">
             <span class="bump-title">🎉 Parabéns pelo Upgrade!</span>
-            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #5d4037;">
-                Você também garantiu acesso ao guia extra: <br>
-                <strong>{{params.NOME_ORDERBUMP}}</strong>.
+            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: [COR_CARD_BUMP_TEXTO];">
+                Identificamos que você também garantiu o produto adicional: <br>
+                <strong>{{params.NOME_ORDERBUMP}}</strong>.<br>
+                Ele já foi liberado e está disponível na sua área de membros!
             </p>
         </div>
         {% endif %}
