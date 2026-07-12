@@ -731,6 +731,15 @@
                 desc: 'Guia completo de defensivos, produtos e dosagens recomendadas para manter sua horta protegida.',
                 img: 'https://i.ibb.co/Qv274w4k/image.png',
                 link: 'https://drive.google.com/file/d/1FghLaRiFc9d66sly7wt7UuH2s_lkOewF/view'
+            },
+            {
+                id: 6,
+                type: 'orderbump_adubacao',
+                badge: 'OFERTA ESPECIAL',
+                title: 'Kit Completo de Adubação para Hortaliças',
+                desc: 'Guia completo de adubação para hortaliças para garantir um solo fértil e plantas saudáveis.',
+                img: 'https://i.ibb.co/Qv274w4k/image.png',
+                link: 'https://drive.google.com/file/d/1RgD1uVnZlhOuvLfeGoJrbv-kaa6ifaFB/view'
             }
         ];
 
@@ -751,6 +760,7 @@
             const availableMaterials = materials.filter(item => {
                 if (item.type === 'bonus' && userPlan === 'basico') return false;
                 if (item.type === 'orderbump' && !userPlan.includes('orderbump')) return false;
+                if (item.type === 'orderbump_adubacao' && !userPlan.includes('adubacao')) return false;
                 return true;
             });
             // Filter completedIds to only count ones that are actually available to the user
@@ -776,6 +786,7 @@
             if (item) {
                 if (item.type === 'bonus' && userPlan === 'basico') return;
                 if (item.type === 'orderbump' && !userPlan.includes('orderbump')) return;
+                if (item.type === 'orderbump_adubacao' && !userPlan.includes('adubacao')) return;
             }
 
             const index = completedIds.indexOf(id);
@@ -808,6 +819,9 @@
                     isLocked = true;
                     lockMessage = 'Disponível no Plano Completo';
                 } else if (item.type === 'orderbump' && !userPlan.includes('orderbump')) {
+                    isLocked = true;
+                    lockMessage = 'Adquira este Guia Especial';
+                } else if (item.type === 'orderbump_adubacao' && !userPlan.includes('adubacao')) {
                     isLocked = true;
                     lockMessage = 'Adquira este Guia Especial';
                 }
